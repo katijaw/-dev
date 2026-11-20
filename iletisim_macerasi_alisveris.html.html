@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>İletişim Macerası – Alışveriş Zamanı</title>
+<style>
+  :root { --ink:#26334a; --blue:#4778d9; --pale:#eef4ff; --green:#3b9b72; --orange:#f2a640; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family: "Trebuchet MS", Arial, sans-serif; color:var(--ink); background:linear-gradient(135deg,#f4f8ff,#fff8ec); }
+  header { padding:22px 18px 16px; text-align:center; background:#fff; border-bottom:4px solid #dce8ff; }
+  h1 { margin:0; font-size:clamp(1.55rem,4vw,2.25rem); color:#3159a6; }
+  header p { margin:8px 0 0; font-size:1rem; }
+  .game-nav { display:flex; justify-content:center; gap:10px; padding:14px 12px 0; flex-wrap:wrap; }
+  .nav-btn { border:2px solid #dce5f3; background:#fff; color:#3159a6; border-radius:14px; padding:11px 18px; font:inherit; font-weight:800; cursor:pointer; }
+  .nav-btn.active { background:#3159a6; color:#fff; border-color:#3159a6; }
+  #foodSentence { min-height:25px; font-weight:800; font-size:1.12rem; margin-top:4px; }
+  main { max-width:1050px; margin:20px auto; padding:0 16px 32px; }
+  .topline { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:14px; }
+  .step { background:#fff; border-radius:16px; padding:10px 15px; box-shadow:0 3px 12px #20305012; font-weight:700; }
+  .progress { height:12px; background:#dfe8f8; border-radius:20px; overflow:hidden; flex:1; min-width:120px; }
+  .progress span { display:block; height:100%; width:0%; background:linear-gradient(90deg,#56b58b,#8acb79); transition:width .3s; }
+  .layout { display:grid; grid-template-columns:1.05fr .95fr; gap:16px; }
+  .panel { background:#fff; border-radius:22px; padding:18px; box-shadow:0 5px 18px #20305012; }
+  .scene { min-height:290px; background:linear-gradient(180deg,#dff3ff 0 62%,#d8efc8 62%); position:relative; overflow:hidden; }
+  .scene h2 { margin:0 0 8px; }
+  .shop { font-size:5rem; text-align:center; margin:15px 0 0; }
+  .character { font-size:3.7rem; text-align:center; margin-top:-4px; }
+  .speech { background:#fff; border:2px solid #cbdcff; border-radius:18px; padding:12px; margin-top:10px; text-align:center; font-weight:700; }
+  .task { background:#fff7e6; border:2px dashed #f1c36d; padding:13px; border-radius:16px; margin-top:12px; line-height:1.45; }
+  .task strong { color:#9a6410; }
+  .section-title { margin:0 0 12px; font-size:1.2rem; }
+  .board { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+  .symbol { border:2px solid #dce5f3; background:#fbfdff; border-radius:16px; min-height:112px; padding:8px 5px; cursor:pointer; color:var(--ink); font:inherit; transition:.15s; }
+  .symbol:hover, .symbol:focus-visible { border-color:var(--blue); transform:translateY(-2px); outline:3px solid #d9e5ff; }
+  .symbol .emoji { display:block; font-size:2.35rem; line-height:1.3; }
+  .symbol .word { display:block; font-weight:800; margin-top:3px; }
+  .symbol.utility { background:#f1f8f4; border-color:#cce8d8; }
+  .sentence { min-height:74px; border:2px solid #dce5f3; border-radius:15px; padding:10px; background:#f8fbff; margin:12px 0; }
+  .sentence-label { font-size:.85rem; color:#64728a; font-weight:700; }
+  #sentenceText { min-height:25px; font-weight:800; font-size:1.12rem; margin-top:4px; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .action { border:0; border-radius:13px; padding:11px 14px; font:inherit; font-weight:800; cursor:pointer; background:#e8efff; color:#294e9b; }
+  .action.primary { background:var(--blue); color:#fff; }
+  .action.green { background:#e0f4e9; color:#226b4a; }
+  .action.orange { background:#fff0d8; color:#86520a; }
+  .action:disabled { opacity:.45; cursor:not-allowed; }
+  .basket { display:flex; flex-wrap:wrap; gap:8px; min-height:64px; padding:10px; border:2px dashed #b9c9df; border-radius:15px; background:#fbfdff; }
+  .basket-item { background:#eaf5ed; border-radius:12px; padding:8px 10px; font-weight:700; }
+  .feedback { min-height:26px; margin:10px 0 0; font-weight:800; color:#28734f; }
+  .note { color:#65738a; font-size:.88rem; line-height:1.45; margin-top:14px; }
+  .overlay { display:none; position:fixed; inset:0; background:#17243b99; align-items:center; justify-content:center; padding:20px; z-index:5; }
+  .modal { background:white; border-radius:24px; padding:26px; max-width:440px; width:100%; text-align:center; box-shadow:0 12px 40px #0003; }
+  .modal .big { font-size:4rem; }
+  .modal h2 { color:#3159a6; }
+  .stars-row { display:flex; justify-content:center; gap:10px; margin:14px 0 6px; }
+  .star { font-size:3.4rem; line-height:1; filter:grayscale(1) opacity(.28); transform:scale(.6); transition:filter .4s, transform .4s; }
+  .star.on { filter:none; transform:scale(1); animation:starPop .6s ease; }
+  @keyframes starPop { 0%{transform:scale(.3) rotate(-25deg)} 60%{transform:scale(1.35) rotate(10deg)} 100%{transform:scale(1) rotate(0)} }
+  .star-count { font-weight:800; font-size:1.1rem; color:#9a6410; }
+  .finish-detail { color:#65738a; font-size:.92rem; margin:6px 0 16px; }
+  @media(max-width:760px) { .layout { grid-template-columns:1fr; } .scene { min-height:240px; } .board { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  @media(max-width:390px) { .symbol { min-height:96px; } .symbol .emoji { font-size:1.9rem; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛒 İletişim Macerası</h1>
+  <p>Küçük Kaşif ile Alışveriş Zamanı</p>
+</header>
+<nav class="game-nav" aria-label="Oyun seçimi">
+  <button class="nav-btn active" id="marketTab" onclick="showGame('market')">🛒 Alışveriş Zamanı</button>
+  <button class="nav-btn" id="foodTab" onclick="showGame('food')">🥪 Yemek Zamanı</button>
+  <button class="nav-btn" id="iceTab" onclick="showGame('ice')">🍦 Dondurma Dükkânı</button>
+</nav>
+<main>
+  <div id="marketGame">
+  <div class="topline">
+    <div class="step" id="stepLabel">Görev 1 / 3</div>
+    <div class="progress" aria-label="Oyun ilerlemesi"><span id="progressBar"></span></div>
+    <div class="step">⭐ <span id="score">0</span> yıldız</div>
+  </div>
+  <div class="layout">
+    <section class="panel scene" aria-label="Oyun sahnesi">
+      <h2>Marketin içindeyiz!</h2>
+      <div class="shop" aria-hidden="true">🏪</div>
+      <div class="character" aria-hidden="true">🧒</div>
+      <div class="speech" id="sceneSpeech">Merhaba! Alışveriş yapmama yardım eder misin?</div>
+      <div class="task" id="taskText"><strong>Görev:</strong> Sepetimize bir elma ekleyelim. Elma sembolüne dokunabilirsin.</div>
+    </section>
+    <section class="panel">
+      <h2 class="section-title">💬 İletişim panom</h2>
+      <p style="margin-top:-4px;color:#65738a">İstediğin sembole dokun. Seçtiğin sembol mesaj alanına eklenecek.</p>
+      <div class="board" id="board">
+        <button class="symbol" data-word="Elma" data-emoji="🍎" data-type="food"><span class="emoji">🍎</span><span class="word">Elma</span></button>
+        <button class="symbol" data-word="Muz" data-emoji="🍌" data-type="food"><span class="emoji">🍌</span><span class="word">Muz</span></button>
+        <button class="symbol" data-word="Ekmek" data-emoji="🍞" data-type="food"><span class="emoji">🍞</span><span class="word">Ekmek</span></button>
+        <button class="symbol" data-word="Süt" data-emoji="🥛" data-type="food"><span class="emoji">🥛</span><span class="word">Süt</span></button>
+        <button class="symbol" data-word="Peynir" data-emoji="🧀" data-type="food"><span class="emoji">🧀</span><span class="word">Peynir</span></button>
+        <button class="symbol" data-word="Su" data-emoji="💧" data-type="food"><span class="emoji">💧</span><span class="word">Su</span></button>
+        <button class="symbol utility" data-word="İstiyorum" data-emoji="🙋" data-type="utility"><span class="emoji">🙋</span><span class="word">İstiyorum</span></button>
+        <button class="symbol utility" data-word="Yardım" data-emoji="🆘" data-type="utility"><span class="emoji">🆘</span><span class="word">Yardım</span></button>
+        <button class="symbol utility" data-word="Bitti" data-emoji="🏁" data-type="utility"><span class="emoji">🏁</span><span class="word">Bitti</span></button>
+      </div>
+      <div class="sentence">
+        <div class="sentence-label">OLUŞTURDUĞUM MESAJ</div>
+        <div id="sentenceText" aria-live="polite">Henüz sembol seçmedin.</div>
+      </div>
+      <div class="actions">
+        <button class="action primary" id="speakBtn">🔊 Mesajı söyle</button>
+        <button class="action" id="clearBtn">↩ Temizle</button>
+      </div>
+      <p class="feedback" id="feedback" aria-live="polite"></p>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2 class="section-title">🧺 Alışveriş sepetim</h2>
+    <div class="basket" id="basket"><span style="color:#718096">Sepetimiz henüz boş.</span></div>
+    <div class="actions" style="margin-top:12px">
+      <button class="action green" id="addBtn">➕ Seçtiğim ürünü sepete ekle</button>
+      <button class="action orange" id="nextBtn" disabled>Sonraki görev ➜</button>
+      <button class="action" id="restartBtn">⟲ Oyunu baştan başlat</button>
+    </div>
+    <p class="note"><strong>Yetişkin/terapist için:</strong> Çocuğa sembolleri kullanarak model olun. Gerektiğinde bekleme süresi tanıyın ve en az destekten başlayarak ipucu verin. Çocuğun konuşması zorunlu değildir; sembole dokunması, bakışı veya başka tutarlı iletişim davranışları da iletişim girişimi olarak değerlendirilebilir. Bu oyun örnek bir eğitim materyalidir; bireysel değerlendirme ve terapi planının yerini tutmaz.</p>
+  </section>
+
+  </div><!-- /marketGame -->
+
+  <div id="foodGame" style="display:none">
+    <div class="topline">
+      <div class="step" id="foodStep">Tarif 1 / 3</div>
+      <div class="progress"><span id="foodProgress"></span></div>
+      <div class="step">⭐ <span id="foodScore">0</span> yıldız</div>
+    </div>
+    <div class="layout">
+      <section class="panel scene">
+        <h2>Minik Şefin Mutfağı!</h2>
+        <div class="shop" aria-hidden="true">👩‍🍳</div>
+        <div class="character" aria-hidden="true">🥣</div>
+        <div class="speech" id="foodSpeech">Merhaba şef! Birlikte lezzetli bir yemek hazırlayalım.</div>
+        <div class="task" id="foodTask"><strong>Görev:</strong> Sandviçimize ekmek ekleyelim. Ekmek sembolüne dokun.</div>
+      </section>
+      <section class="panel">
+        <h2 class="section-title">💬 Yemek iletişim panom</h2>
+        <p style="margin-top:-4px;color:#65738a">Malzemeleri ve iletişim mesajlarını seçerek tarifini oluştur.</p>
+        <div class="board" id="foodBoard">
+          <button class="symbol" data-word="Ekmek" data-emoji="🍞"><span class="emoji">🍞</span><span class="word">Ekmek</span></button>
+          <button class="symbol" data-word="Peynir" data-emoji="🧀"><span class="emoji">🧀</span><span class="word">Peynir</span></button>
+          <button class="symbol" data-word="Domates" data-emoji="🍅"><span class="emoji">🍅</span><span class="word">Domates</span></button>
+          <button class="symbol" data-word="Salatalık" data-emoji="🥒"><span class="emoji">🥒</span><span class="word">Salatalık</span></button>
+          <button class="symbol" data-word="Muz" data-emoji="🍌"><span class="emoji">🍌</span><span class="word">Muz</span></button>
+          <button class="symbol" data-word="Su" data-emoji="💧"><span class="emoji">💧</span><span class="word">Su</span></button>
+          <button class="symbol utility" data-word="İstiyorum" data-emoji="🙋"><span class="emoji">🙋</span><span class="word">İstiyorum</span></button>
+          <button class="symbol utility" data-word="Yardım" data-emoji="🆘"><span class="emoji">🆘</span><span class="word">Yardım</span></button>
+          <button class="symbol utility" data-word="Bitti" data-emoji="🏁"><span class="emoji">🏁</span><span class="word">Bitti</span></button>
+        </div>
+        <div class="sentence">
+          <div class="sentence-label">OLUŞTURDUĞUM MESAJ</div>
+          <div id="foodSentence" aria-live="polite">Henüz sembol seçmedin.</div>
+        </div>
+        <div class="actions">
+          <button class="action primary" id="foodSpeak">🔊 Mesajı söyle</button>
+          <button class="action" id="foodClear">↩ Temizle</button>
+        </div>
+        <p class="feedback" id="foodFeedback" aria-live="polite"></p>
+      </section>
+    </div>
+    <section class="panel" style="margin-top:16px">
+      <h2 class="section-title">🍽️ Tarif tabağım</h2>
+      <div class="basket" id="plate"><span style="color:#718096">Tabağımız henüz boş.</span></div>
+      <div class="actions" style="margin-top:12px">
+        <button class="action green" id="foodAdd">➕ Seçtiğim malzemeyi tabağa ekle</button>
+        <button class="action orange" id="foodNext" disabled>Sonraki adım ➜</button>
+        <button class="action" id="foodRestart">⟲ Tarifi baştan başlat</button>
+      </div>
+      <p class="note"><strong>Yetişkin/terapist için:</strong> Malzemeleri seçerken “Ne istiyorsun?”, “Başka ne ekleyelim?” gibi doğal iletişim fırsatları oluşturun. “İstiyorum”, “yardım” ve “bitti” gibi işlevsel sembolleri modelleyin. Çocuğun sembol kullanımı için bekleyin; gerektiğinde ipucu sunun. Sözel yanıt zorunlu değildir.</p>
+    </section>
+  </div>
+  <div id="iceGame" style="display:none">
+    <div class="topline">
+      <div class="step" id="iceStep">Seviye 1 / 4</div>
+      <div class="progress"><span id="iceProgress"></span></div>
+      <div class="step">⭐ <span id="iceScore">0</span> yıldız</div>
+    </div>
+    <div class="layout">
+      <section class="panel scene">
+        <h2>Dondurmacı Dede'nin Dükkânı</h2>
+        <div class="shop" aria-hidden="true">🍦</div>
+        <div class="character" aria-hidden="true">👴</div>
+        <div class="speech" id="iceSpeech">Merhaba! Dondurma dükkânına hoş geldin. Ne istiyorsun?</div>
+        <div class="task" id="iceTask"><strong>Görev:</strong> Dondurma sembolüne dokun ve Dede'ye söyle.</div>
+      </section>
+      <section class="panel">
+        <h2 class="section-title">💬 Dondurma iletişim panom</h2>
+        <p style="margin-top:-4px;color:#65738a">Sembollere dokunarak Dede'ye ne istediğini anlat.</p>
+        <div class="board" id="iceBoard">
+          <button class="symbol" data-word="Dondurma" data-emoji="🍦"><span class="emoji">🍦</span><span class="word">Dondurma</span></button>
+          <button class="symbol" data-word="Çilekli" data-emoji="🍓"><span class="emoji">🍓</span><span class="word">Çilekli</span></button>
+          <button class="symbol" data-word="Çikolatalı" data-emoji="🍫"><span class="emoji">🍫</span><span class="word">Çikolatalı</span></button>
+          <button class="symbol utility" data-word="İstiyorum" data-emoji="🙋"><span class="emoji">🙋</span><span class="word">İstiyorum</span></button>
+          <button class="symbol utility" data-word="Daha" data-emoji="➕"><span class="emoji">➕</span><span class="word">Daha</span></button>
+          <button class="symbol utility" data-word="Bitti" data-emoji="🏁"><span class="emoji">🏁</span><span class="word">Bitti</span></button>
+          <button class="symbol utility" data-word="Yok" data-emoji="🚫"><span class="emoji">🚫</span><span class="word">Yok</span></button>
+          <button class="symbol utility" data-word="Yardım" data-emoji="🆘"><span class="emoji">🆘</span><span class="word">Yardım</span></button>
+          <button class="symbol" data-word="Limonlu" data-emoji="🍋"><span class="emoji">🍋</span><span class="word">Limonlu</span></button>
+        </div>
+        <div class="sentence">
+          <div class="sentence-label">OLUŞTURDUĞUM MESAJ</div>
+          <div id="iceSentence" aria-live="polite" style="min-height:25px;font-weight:800;font-size:1.12rem;margin-top:4px">Henüz sembol seçmedin.</div>
+        </div>
+        <div class="actions">
+          <button class="action primary" id="iceSpeak">🔊 Mesajı söyle</button>
+          <button class="action green" id="iceSend">🍦 Dede'ye söyle</button>
+          <button class="action" id="iceClear">↩ Temizle</button>
+        </div>
+        <p class="feedback" id="iceFeedback" aria-live="polite"></p>
+      </section>
+    </div>
+    <section class="panel" style="margin-top:16px">
+      <h2 class="section-title">🍨 Dondurmalarım</h2>
+      <div class="basket" id="iceCup"><span style="color:#718096">Henüz dondurmamız yok.</span></div>
+      <div class="actions" style="margin-top:12px">
+        <button class="action orange" id="iceNext" disabled>Sonraki seviye ➜</button>
+        <button class="action" id="iceRestart">⟲ Oyunu baştan başlat</button>
+      </div>
+      <p class="note"><strong>Yetişkin/terapist için:</strong> Önce siz sembol panosunu kullanarak model olun (destekli dil uyarımı). Dede'nin bilerek bekleyip “Ne istiyorsun?” demesi veya yanlış dondurma vermesi, iletişim fırsatı yaratma stratejisidir. Çocuğa 5-10 saniye bekleme süresi tanıyın, ardından en az destekten başlayarak ipucu verin. Çocuğun sembole dokunması, bakışı veya jesti de iletişim girişimidir. Seviyeler: 1) “dondurma”, 2) “dondurma istiyorum”, 3) “çilekli dondurma istiyorum”, 4) “daha istiyorum”. Türkçe cümle sırası modellenir; doğru sembollerin seçilmesi sıradan bağımsız olarak kabul edilir.</p>
+    </section>
+  </div>
+</main>
+
+<div class="overlay" id="finishOverlay" role="dialog" aria-modal="true" aria-labelledby="finishTitle">
+  <div class="modal">
+    <div class="big" id="finishIcon">🏆</div>
+    <h2 id="finishTitle">Harika iş çıkardın!</h2>
+    <p id="finishText"></p>
+    <div class="stars-row" id="starsRow" aria-hidden="true">
+      <span class="star">⭐</span><span class="star">⭐</span><span class="star">⭐</span>
+    </div>
+    <div class="star-count" id="starCount" aria-live="polite"></div>
+    <p class="finish-detail" id="finishDetail"></p>
+    <button class="action primary" id="finishRestart">Yeniden oyna</button>
+    <button class="action" id="finishClose">Kapat</button>
+  </div>
+</div>
+
+<script>
+const tasks = [
+  {name:"Elma", emoji:"🍎", prompt:"Sepetimize bir elma ekleyelim. Elma sembolüne dokunabilirsin.", speech:"Elma istiyorum.", hint:"Elma 🍎"},
+  {name:"Süt", emoji:"🥛", prompt:"Şimdi süt alalım. Süt sembolünü seçerek isteğini anlatabilirsin.", speech:"Süt istiyorum.", hint:"Süt 🥛"},
+  {name:"Ekmek", emoji:"🍞", prompt:"Son görev! Sepetimize ekmek ekleyelim. Ekmek sembolünü bul.", speech:"Ekmek istiyorum.", hint:"Ekmek 🍞"}
+];
+let taskIndex = 0, selected = [], basket = [], score = 0, marketHints = 0;
+
+// Yıldız ölçütü: ipucu gereksinimine göre (0 ipucu = 3 yıldız, 1-2 ipucu = 2 yıldız, 3+ ipucu = 1 yıldız)
+function starsFromHints(h) { return h === 0 ? 3 : (h <= 2 ? 2 : 1); }
+function showFinish(opts) {
+  const stars = starsFromHints(opts.hints);
+  const msgs = {3:"Mükemmel! Hiç yardım almadan başardın!", 2:"Çok güzel! Biraz yardımla harika iş çıkardın!", 1:"Tebrikler! Denedikçe daha da iyi olacaksın!"};
+  $("finishIcon").textContent = opts.icon;
+  $("finishTitle").textContent = opts.title;
+  $("finishText").textContent = opts.text;
+  $("finishDetail").textContent = opts.hints === 0 ? "İpucu gerekmedi." : `Kullanılan ipucu sayısı: ${opts.hints}`;
+  $("starCount").textContent = `${stars} / 3 yıldız · ${msgs[stars]}`;
+  const els = document.querySelectorAll("#starsRow .star");
+  els.forEach(s => s.classList.remove("on"));
+  $("finishRestart").onclick = () => { $("finishOverlay").style.display = "none"; opts.restart(); };
+  $("finishClose").onclick = () => { $("finishOverlay").style.display = "none"; };
+  $("finishOverlay").style.display = "flex";
+  els.forEach((s, i) => { if (i < stars) setTimeout(() => s.classList.add("on"), 400 + i*450); });
+  if ("speechSynthesis" in window) {
+    // Sesli okuma yalnızca kullanıcı düğmeye bastığında çalışır.
+  }
+}
+const $ = id => document.getElementById(id);
+const board = $("board");
+
+function render() {
+  $("stepLabel").textContent = `Görev ${Math.min(taskIndex+1,3)} / 3`;
+  $("progressBar").style.width = `${(taskIndex/3)*100}%`;
+  $("score").textContent = score;
+  $("taskText").innerHTML = `<strong>Görev:</strong> ${tasks[taskIndex].prompt}`;
+  $("sceneSpeech").textContent = "Birlikte alışveriş yapalım! Ne istediğini sembollerle anlatabilirsin.";
+  $("nextBtn").disabled = !basket.includes(tasks[taskIndex].name);
+  $("nextBtn").textContent = taskIndex === 2 ? "Alışverişi bitir ✓" : "Sonraki görev ➜";
+  $("sentenceText").textContent = selected.length ? selected.map(x=>x.word).join(" + ") : "Henüz sembol seçmedin.";
+  $("basket").innerHTML = basket.length ? basket.map(n => {
+    const t = tasks.find(x=>x.name===n);
+    return `<span class="basket-item">${t ? t.emoji : "🛍️"} ${n}</span>`;
+  }).join("") : '<span style="color:#718096">Sepetimiz henüz boş.</span>';
+}
+board.addEventListener("click", e => {
+  const btn = e.target.closest("button.symbol");
+  if (!btn) return;
+  const item = {word:btn.dataset.word, emoji:btn.dataset.emoji, type:btn.dataset.type};
+  selected.push(item);
+  $("sentenceText").textContent = selected.map(x=>x.word).join(" + ");
+  $("feedback").textContent = item.type === "food" ? `${item.emoji} ${item.word} seçtin. İstersen mesajını söyleyebilir veya ürünü sepete ekleyebilirsin.` : `${item.emoji} “${item.word}” mesajını seçtin.`;
+  $("sceneSpeech").textContent = item.type === "food" ? `${item.word}! Güzel seçim.` : `${item.word}. Seni dinliyorum!`;
+  if ("speechSynthesis" in window) {
+    // Sesli okuma, kullanıcı düğmeye bastığında ayrıca çalıştırılır.
+  }
+});
+$("speakBtn").addEventListener("click", () => {
+  if (!selected.length) { $("feedback").textContent = "Önce iletişim panosundan bir sembol seçebilirsin."; return; }
+  const phrase = selected.map(x=>x.word).join(" ");
+  if ("speechSynthesis" in window) {
+    speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(phrase);
+    utterance.lang = "tr-TR";
+    speechSynthesis.speak(utterance);
+    $("feedback").textContent = `🔊 “${phrase}”`;
+  } else $("feedback").textContent = "Bu tarayıcı sesli okumayı desteklemiyor.";
+});
+$("clearBtn").addEventListener("click", () => {
+  selected = []; $("sentenceText").textContent = "Henüz sembol seçmedin."; $("feedback").textContent = "Mesaj alanı temizlendi.";
+});
+$("addBtn").addEventListener("click", () => {
+  const current = tasks[taskIndex];
+  const hasTarget = selected.some(x=>x.word===current.name);
+  if (!hasTarget) {
+    marketHints++;
+    $("feedback").textContent = `İpucu: Bu görevde ${current.hint} sembolünü bulmayı deneyebilirsin.`;
+    return;
+  }
+  if (!basket.includes(current.name)) {
+    basket.push(current.name); score += 1;
+    $("feedback").textContent = `Harika! ${current.name} sepete eklendi. ⭐`;
+    $("sceneSpeech").textContent = `${current.emoji} ${current.name} sepete girdi!`;
+  } else $("feedback").textContent = `${current.name} zaten sepette.`;
+  render();
+});
+$("nextBtn").addEventListener("click", () => {
+  if (!basket.includes(tasks[taskIndex].name)) return;
+  if (taskIndex < tasks.length - 1) {
+    taskIndex++; selected = []; $("feedback").textContent = "Yeni görev hazır!"; render();
+  } else {
+    $("progressBar").style.width = "100%";
+    showFinish({icon:"🏆", title:"Harika iş çıkardın!", text:"Alışveriş görevlerini tamamladın. İletişim kurarak sepetimizi doldurdun!", hints:marketHints, restart:restartGame});
+  }
+});
+$("restartBtn").addEventListener("click", restartGame);
+function restartGame() {
+  taskIndex = 0; selected = []; basket = []; score = 0; marketHints = 0;
+  $("finishOverlay").style.display = "none";
+  $("feedback").textContent = "Haydi yeniden başlayalım!";
+  render();
+}
+render();
+
+function showGame(which) {
+  const ids = {market:"marketGame", food:"foodGame", ice:"iceGame"};
+  const tabs = {market:"marketTab", food:"foodTab", ice:"iceTab"};
+  Object.keys(ids).forEach(k => {
+    $(ids[k]).style.display = (k === which) ? "block" : "none";
+    $(tabs[k]).classList.toggle("active", k === which);
+  });
+}
+
+const foodSteps = [
+  {name:"Ekmek", emoji:"🍞", prompt:"Sandviçimizin temelini hazırlayalım. Ekmek sembolünü seç.", speech:"Ekmek istiyorum."},
+  {name:"Peynir", emoji:"🧀", prompt:"Sandviçimize peynir ekleyelim. Peynir sembolünü bul.", speech:"Peynir istiyorum."},
+  {name:"Domates", emoji:"🍅", prompt:"Son malzememiz domates! Domates sembolünü seçerek tarifimizi tamamla.", speech:"Domates istiyorum."}
+];
+let foodIndex = 0, foodSelected = [], ingredients = [], foodStars = 0, foodHints = 0;
+const foodBoard = $("foodBoard");
+
+function renderFood() {
+  $("foodStep").textContent = `Tarif ${foodIndex+1} / 3`;
+  $("foodProgress").style.width = `${(foodIndex/3)*100}%`;
+  $("foodScore").textContent = foodStars;
+  $("foodTask").innerHTML = `<strong>Görev:</strong> ${foodSteps[foodIndex].prompt}`;
+  $("foodNext").disabled = !ingredients.includes(foodSteps[foodIndex].name);
+  $("foodNext").textContent = foodIndex === 2 ? "Tarifi tamamla ✓" : "Sonraki adım ➜";
+  $("foodSentence").textContent = foodSelected.length ? foodSelected.map(x=>x.word).join(" + ") : "Henüz sembol seçmedin.";
+  $("plate").innerHTML = ingredients.length ? ingredients.map(n => {
+    const item = foodSteps.find(x=>x.name===n);
+    return `<span class="basket-item">${item ? item.emoji : "🍽️"} ${n}</span>`;
+  }).join("") : '<span style="color:#718096">Tabağımız henüz boş.</span>';
+}
+foodBoard.addEventListener("click", e => {
+  const btn = e.target.closest("button.symbol");
+  if (!btn) return;
+  foodSelected.push({word:btn.dataset.word, emoji:btn.dataset.emoji});
+  $("foodSentence").textContent = foodSelected.map(x=>x.word).join(" + ");
+  $("foodFeedback").textContent = `${btn.dataset.emoji} ${btn.dataset.word} seçtin. Mesajını sesli dinleyebilir veya malzemeyi tabağa ekleyebilirsin.`;
+  $("foodSpeech").textContent = `${btn.dataset.word}! Güzel seçim.`;
+});
+$("foodSpeak").addEventListener("click", () => {
+  if (!foodSelected.length) { $("foodFeedback").textContent = "Önce bir sembol seçebilirsin."; return; }
+  const phrase = foodSelected.map(x=>x.word).join(" ");
+  if ("speechSynthesis" in window) {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(phrase); u.lang = "tr-TR"; speechSynthesis.speak(u);
+    $("foodFeedback").textContent = `🔊 “${phrase}”`;
+  } else $("foodFeedback").textContent = "Bu tarayıcı sesli okumayı desteklemiyor.";
+});
+$("foodClear").addEventListener("click", () => {
+  foodSelected = []; $("foodSentence").textContent = "Henüz sembol seçmedin.";
+  $("foodFeedback").textContent = "Mesaj alanı temizlendi.";
+});
+$("foodAdd").addEventListener("click", () => {
+  const current = foodSteps[foodIndex];
+  if (!foodSelected.some(x=>x.word===current.name)) {
+    foodHints++;
+    $("foodFeedback").textContent = `İpucu: Bu adımda ${current.emoji} ${current.name} sembolünü bulmayı deneyebilirsin.`;
+    return;
+  }
+  if (!ingredients.includes(current.name)) {
+    ingredients.push(current.name); foodStars++;
+    $("foodFeedback").textContent = `Harika! ${current.name} tabağa eklendi. ⭐`;
+    $("foodSpeech").textContent = `${current.emoji} ${current.name} tarifimize eklendi!`;
+  } else $("foodFeedback").textContent = `${current.name} zaten tabağımızda.`;
+  renderFood();
+});
+$("foodNext").addEventListener("click", () => {
+  if (!ingredients.includes(foodSteps[foodIndex].name)) return;
+  if (foodIndex < foodSteps.length - 1) {
+    foodIndex++; foodSelected = []; $("foodFeedback").textContent = "Yeni tarif adımı hazır!"; renderFood();
+  } else {
+    $("foodProgress").style.width = "100%";
+    $("foodTask").innerHTML = "<strong>Harika!</strong> Sandviçimizi tamamladık. Afiyet olsun! 🥪";
+    $("foodSpeech").textContent = "Birlikte çok güzel bir sandviç hazırladık!";
+    $("foodFeedback").textContent = "🎉 Tarif tamamlandı! İletişim kurarak yemeğimizi hazırladın.";
+    $("foodNext").disabled = true;
+    showFinish({icon:"🥪", title:"Afiyet olsun, minik şef!", text:"Sandviçimizi iletişim kurarak birlikte hazırladık!", hints:foodHints, restart:restartFood});
+  }
+});
+function restartFood() {
+  foodIndex = 0; foodSelected = []; ingredients = []; foodStars = 0; foodHints = 0;
+  $("foodTask").innerHTML = `<strong>Görev:</strong> ${foodSteps[0].prompt}`;
+  $("foodSpeech").textContent = "Merhaba şef! Birlikte lezzetli bir yemek hazırlayalım.";
+  $("foodFeedback").textContent = "Haydi yeni bir tarif hazırlayalım!";
+  renderFood();
+}
+$("foodRestart").addEventListener("click", restartFood);
+renderFood();
+
+// ---------- Dondurma Dükkânı ----------
+const iceLevels = [
+  {target:["Dondurma"], prompt:"Dondurma sembolüne dokun ve Dede'ye söyle.", hint:"Dondurma 🍦", ok:"Dondurma istiyorsun! Buyur, işte dondurman. 🍦", cup:"🍦 Dondurma"},
+  {target:["Dondurma","İstiyorum"], prompt:"İki sembol bir araya getir: Dondurma + İstiyorum.", hint:"Dondurma 🍦 + İstiyorum 🙋", ok:"“Dondurma istiyorum”! Çok güzel söyledin. Buyur! 🍦", cup:"🍦 Dondurma"},
+  {target:["Çilekli","Dondurma","İstiyorum"], prompt:"Üç sembol seç: Çilekli + Dondurma + İstiyorum.", hint:"Çilekli 🍓 + Dondurma 🍦 + İstiyorum 🙋", ok:"“Çilekli dondurma istiyorum”! İşte çilekli dondurman. 🍓🍦", cup:"🍓 Çilekli dondurma"},
+  {target:["Daha","İstiyorum"], prompt:"Dondurman çok güzel! Bir tane daha istiyorsan: Daha + İstiyorum.", hint:"Daha ➕ + İstiyorum 🙋", ok:"“Daha istiyorum”! Bir top daha geliyor. 🍨", cup:"🍨 Bir top daha"}
+];
+let iceIndex = 0, iceSelected = [], iceCup = [], iceStars = 0, iceHints = 0, iceDone = false;
+
+function renderIce() {
+  $("iceStep").textContent = `Seviye ${Math.min(iceIndex+1,4)} / 4`;
+  $("iceProgress").style.width = `${(iceIndex/4)*100}%`;
+  $("iceScore").textContent = iceStars;
+  $("iceTask").innerHTML = `<strong>Görev:</strong> ${iceLevels[iceIndex].prompt}`;
+  $("iceNext").disabled = !iceDone;
+  $("iceNext").textContent = iceIndex === 3 ? "Dükkândan çık ✓" : "Sonraki seviye ➜";
+  $("iceSentence").textContent = iceSelected.length ? iceSelected.map(x=>x.word).join(" + ") : "Henüz sembol seçmedin.";
+  $("iceCup").innerHTML = iceCup.length ? iceCup.map(n => `<span class="basket-item">${n}</span>`).join("") : '<span style="color:#718096">Henüz dondurmamız yok.</span>';
+}
+$("iceBoard").addEventListener("click", e => {
+  const btn = e.target.closest("button.symbol");
+  if (!btn) return;
+  if (iceDone) { $("iceFeedback").textContent = "Bu seviye tamamlandı. Sonraki seviyeye geçebilirsin."; return; }
+  iceSelected.push({word:btn.dataset.word, emoji:btn.dataset.emoji});
+  $("iceSentence").textContent = iceSelected.map(x=>x.word).join(" + ");
+  $("iceFeedback").textContent = `${btn.dataset.emoji} ${btn.dataset.word} seçtin. Hazırsan Dede'ye söyleyebilirsin.`;
+  $("iceSpeech").textContent = "Hmm, seni dinliyorum...";
+});
+$("iceSpeak").addEventListener("click", () => {
+  if (!iceSelected.length) { $("iceFeedback").textContent = "Önce iletişim panosundan bir sembol seçebilirsin."; return; }
+  const phrase = iceSelected.map(x=>x.word).join(" ");
+  if ("speechSynthesis" in window) {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(phrase); u.lang = "tr-TR"; speechSynthesis.speak(u);
+    $("iceFeedback").textContent = `🔊 “${phrase}”`;
+  } else $("iceFeedback").textContent = "Bu tarayıcı sesli okumayı desteklemiyor.";
+});
+$("iceClear").addEventListener("click", () => {
+  iceSelected = []; $("iceSentence").textContent = "Henüz sembol seçmedin."; $("iceFeedback").textContent = "Mesaj alanı temizlendi.";
+});
+$("iceSend").addEventListener("click", () => {
+  if (iceDone) { $("iceFeedback").textContent = "Bu seviye tamamlandı. Sonraki seviyeye geçebilirsin."; return; }
+  if (!iceSelected.length) { $("iceSpeech").textContent = "Ne istiyorsun? Panodan bir sembol seçebilirsin."; $("iceFeedback").textContent = "Önce bir sembol seç."; return; }
+  const lv = iceLevels[iceIndex];
+  const words = iceSelected.map(x=>x.word);
+  const sameSymbols = words.length === lv.target.length && [...words].sort().join("|") === [...lv.target].sort().join("|");
+  if (sameSymbols) {
+    iceDone = true; iceStars++; iceCup.push(lv.cup);
+    $("iceSpeech").textContent = lv.ok;
+    $("iceFeedback").textContent = "Harika! Dede seni anladı. ⭐";
+    renderIce();
+    return;
+  }
+  iceHints++;
+  // Seviye 3: çocuk tat söylemezse Dede bilerek sade dondurma verir (iletişim fırsatı)
+  if (iceIndex === 2 && words.includes("İstiyorum") && words.includes("Dondurma") && !words.includes("Çilekli")) {
+    $("iceSpeech").textContent = "Buyur, sade dondurma! 🍦 Ama sen hangi tadı istemiştin?";
+    $("iceFeedback").textContent = "Dede yanlış anladı. Hangi tadı istediğini sembolle söyleyebilirsin: Çilekli 🍓";
+  } else {
+    $("iceSpeech").textContent = "Hmm, tam anlayamadım. Tekrar söyler misin?";
+    $("iceFeedback").textContent = `İpucu: Şu sembolleri deneyebilirsin: ${lv.hint}`;
+  }
+  iceSelected = []; renderIce();
+});
+$("iceNext").addEventListener("click", () => {
+  if (!iceDone) return;
+  if (iceIndex < iceLevels.length - 1) {
+    iceIndex++; iceDone = false; iceSelected = [];
+    $("iceSpeech").textContent = "Yeni bir dondurma zamanı! Ne istiyorsun?";
+    $("iceFeedback").textContent = "Yeni seviye hazır!";
+    renderIce();
+  } else {
+    $("iceProgress").style.width = "100%";
+    $("iceTask").innerHTML = "<strong>Harika!</strong> Dondurmalarını bitirdin. Afiyet olsun! 🍦";
+    $("iceSpeech").textContent = "Teşekkürler, yine bekleriz!";
+    $("iceNext").disabled = true;
+    showFinish({icon:"🍦", title:"Dondurmacı Dede çok mutlu!", text:"Dondurma dükkânında sembollerle istediğini anlattın!", hints:iceHints, restart:restartIce});
+  }
+});
+function restartIce() {
+  iceIndex = 0; iceSelected = []; iceCup = []; iceStars = 0; iceHints = 0; iceDone = false;
+  $("iceSpeech").textContent = "Merhaba! Dondurma dükkânına hoş geldin. Ne istiyorsun?";
+  $("iceFeedback").textContent = "Haydi yeniden başlayalım!";
+  renderIce();
+}
+$("iceRestart").addEventListener("click", restartIce);
+renderIce();
+
+</script>
+</body>
+</html>
